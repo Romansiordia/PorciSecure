@@ -1,0 +1,7 @@
+{
+  "name": "Pork Safe - Bioseguridad Porcina",
+  "description": "Aplicación profesional para auditoría y gestión de bioseguridad en granjas porcícolas con inteligencia artificial, generación de reportes PDF y análisis gráfico.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
