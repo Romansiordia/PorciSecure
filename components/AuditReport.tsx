@@ -8,9 +8,8 @@ import {
   PolarRadiusAxis, 
   ResponsiveContainer
 } from 'recharts';
-import { Download, ArrowLeft, AlertTriangle, Sparkles, Wand2, ShieldAlert, CheckCircle, ClipboardList, Target, TrendingUp, User, MapPin, Award } from 'lucide-react';
+import { Download, ArrowLeft, AlertTriangle, ShieldAlert, CheckCircle, ClipboardList, Target, TrendingUp, User, MapPin, Award } from 'lucide-react';
 import { FarmData, ModuleScore, ScoreData, AnswerValue } from '../types';
-import { GoogleGenAI } from '@google/genai';
 
 interface AuditReportProps {
   farmData: FarmData;
@@ -31,12 +30,11 @@ const AuditReport: React.FC<AuditReportProps> = ({
   onBack,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const downloadPDF = async () => {
     setIsGenerating(true);
-    // Tiempo de espera extendido para asegurar renderizado completo
+    
+    // Pequeña pausa para asegurar que el DOM esté listo y las gráficas renderizadas
     setTimeout(async () => {
       const element = document.getElementById('report-content');
       if (!element) {
@@ -44,54 +42,32 @@ const AuditReport: React.FC<AuditReportProps> = ({
         return;
       }
 
+      // Configuración de html2pdf optimizada para centrado total y visibilidad
       const opt = {
-        margin: [5, 0, 5, 0], // Margen mínimo en mm
-        filename: `PorkSafe_${farmData.farmName.replace(/\s+/g, '_') || 'Audit'}.pdf`,
+        margin: [10, 10, 10, 10], // Margen equilibrado de 10mm en todos los lados
+        filename: `PorkSafe_${farmData.farmName.replace(/\s+/g, '_') || 'Auditoria'}.pdf`,
         image: { type: 'jpeg', quality: 1.0 },
         html2canvas: { 
-          scale: 2, 
+          scale: 3, // Mayor escala para nitidez profesional
           useCORS: true, 
-          logging: false,
           letterRendering: true,
-          windowWidth: 800,
+          backgroundColor: '#ffffff',
+          width: 794, // Ancho exacto A4 a 96 DPI para evitar distorsión
           scrollX: 0,
-          scrollY: 0,
-          backgroundColor: '#ffffff'
+          scrollY: 0
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
       try {
-        // Ejecución directa para evitar problemas de contexto
-        await html2pdf().set(opt).from(element).save();
+        await html2pdf().from(element).set(opt).save();
       } catch (error) {
         console.error('Error al generar PDF:', error);
       } finally {
         setIsGenerating(false);
       }
-    }, 1500);
-  };
-
-  const generateAIAnalysis = async () => {
-    setIsAnalyzing(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Analiza bioseguridad para granja ${farmData.farmName}. 
-      Puntaje: ${scoreData.percentage}%. 
-      Resultados: ${moduleScores.map(m => `${m.title}: ${m.score.toFixed(0)}%`).join(', ')}.
-      Dame 3 recomendaciones técnicas breves.`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-      });
-      setAiAnalysis(response.text);
-    } catch (error) {
-      console.error('Error en IA:', error);
-    } finally {
-      setIsAnalyzing(false);
-    }
+    }, 1000);
   };
 
   const finalPercentage = parseFloat(scoreData.percentage);
@@ -110,22 +86,22 @@ const AuditReport: React.FC<AuditReportProps> = ({
   }));
 
   return (
-    <div className="min-h-screen bg-slate-200 py-10 flex flex-col items-center">
+    <div className="min-h-screen bg-slate-200 py-10 flex flex-col items-center overflow-x-hidden">
       
-      {/* CONTENEDOR DE CAPTURA - Ajustado 8% a la IZQUIERDA (Padding asimétrico) */}
+      {/* CONTENEDOR DE CAPTURA - Diseñado para encajar perfectamente en A4 */}
       <div 
         id="report-content" 
         className="bg-white text-slate-900 border-none relative shadow-2xl" 
         style={{ 
-          width: '800px', 
+          width: '794px', // Tamaño estándar A4
           paddingTop: '60px',
           paddingBottom: '60px',
-          paddingLeft: '32px',  // Reducido para mover a la izquierda
-          paddingRight: '96px', // Aumentado (8% de margen extra a la derecha para empujar a la izquierda)
+          paddingLeft: '50px', // Padding simétrico para centrado real
+          paddingRight: '50px', 
           boxSizing: 'border-box',
           minHeight: '1120px',
           backgroundColor: '#ffffff',
-          display: 'block' // Evita problemas de flex/margin-auto en la captura
+          position: 'relative'
         }}
       >
         {/* Header Corporativo */}
@@ -153,14 +129,14 @@ const AuditReport: React.FC<AuditReportProps> = ({
              <MapPin className="text-slate-300 shrink-0" size={20} />
              <div className="overflow-hidden">
                <span className="text-[8px] font-black text-slate-400 uppercase block mb-0.5">Unidad Productora</span>
-               <p className="text-sm font-black text-slate-800 leading-tight truncate">{farmData.farmName || "N/A"}</p>
+               <p className="text-sm font-black text-slate-800 leading-tight truncate">{farmData.farmName || "No especificada"}</p>
              </div>
           </div>
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center gap-4">
              <User className="text-slate-300 shrink-0" size={20} />
              <div className="overflow-hidden">
                <span className="text-[8px] font-black text-slate-400 uppercase block mb-0.5">Auditor Responsable</span>
-               <p className="text-sm font-black text-slate-800 leading-tight truncate">{farmData.auditorName || "N/A"}</p>
+               <p className="text-sm font-black text-slate-800 leading-tight truncate">{farmData.auditorName || "No especificado"}</p>
              </div>
           </div>
         </div>
@@ -187,7 +163,7 @@ const AuditReport: React.FC<AuditReportProps> = ({
                <ResponsiveContainer width="100%" height="100%">
                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                    <PolarGrid stroke="#cbd5e1" strokeWidth={0.5} />
-                   <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 800, fill: '#475569' }} />
+                   <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontBold: true, fill: '#475569' }} />
                    <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                    <Radar dataKey="target" stroke="#cbd5e1" strokeDasharray="3 3" fill="#f1f5f9" fillOpacity={0.4} isAnimationActive={false} />
                    <Radar dataKey="score" stroke={finalPercentage >= 80 ? '#10b981' : '#2563eb'} strokeWidth={3} fill={finalPercentage >= 80 ? '#10b981' : '#2563eb'} fillOpacity={0.15} isAnimationActive={false} />
@@ -223,7 +199,7 @@ const AuditReport: React.FC<AuditReportProps> = ({
               {farmData.observations ? (
                 <p className="whitespace-pre-wrap">"{farmData.observations}"</p>
               ) : (
-                <p className="text-slate-500 font-bold opacity-50 italic uppercase tracking-wider">Sin observaciones adicionales.</p>
+                <p className="text-slate-500 font-bold opacity-50 italic uppercase tracking-wider">Sin observaciones adicionales reportadas.</p>
               )}
             </div>
           </div>
@@ -266,56 +242,39 @@ const AuditReport: React.FC<AuditReportProps> = ({
             ))}
           </div>
         </div>
-
-        {/* AI Analysis */}
-        {aiAnalysis && (
-          <div className="mt-12 bg-indigo-50 border-4 border-indigo-100 rounded-[3rem] overflow-hidden" style={{ pageBreakInside: 'avoid' }}>
-            <div className="bg-indigo-700 p-5 flex items-center gap-4 text-white">
-              <Sparkles size={22} className="text-indigo-200" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest">Análisis IA</h3>
-            </div>
-            <div className="p-8 text-slate-800 text-[11px] leading-relaxed whitespace-pre-wrap font-medium">
-              {aiAnalysis}
-            </div>
-          </div>
-        )}
         
         {/* Footer */}
         <footer className="mt-20 pt-10 border-t border-slate-100 flex justify-between items-center opacity-30">
           <div className="flex items-center gap-3">
             <Target size={16} />
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PorkSafe Platform | Technical Report v5.2</p>
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PorkSafe Platform | Reporte Final de Bioseguridad</p>
           </div>
           <div className="text-right">
-            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em]">ID: {Math.random().toString(36).substring(7).toUpperCase()}</p>
+            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em]">ID VALIDATION: {Math.random().toString(36).substring(7).toUpperCase()}</p>
           </div>
         </footer>
       </div>
 
-      {/* Acciones Web */}
-      <div className="no-print mt-10 mb-32 bg-slate-900 p-8 rounded-[3rem] flex flex-col md:flex-row gap-4 justify-center items-center shadow-2xl w-full max-w-2xl border border-slate-800">
-          {!aiAnalysis && (
-            <button 
-                onClick={generateAIAnalysis}
-                disabled={isAnalyzing}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 px-8 rounded-2xl transition-all flex items-center gap-3 disabled:opacity-50 text-xs uppercase"
-            >
-                {isAnalyzing ? <Wand2 className="animate-spin" /> : <Sparkles size={20} />} 
-                Analizar con IA
-            </button>
-          )}
+      {/* Acciones Web - Rediseño Profesional de Botones */}
+      <div className="no-print mt-12 mb-32 flex flex-col md:flex-row gap-6 justify-center items-center w-full max-w-2xl">
           <button 
               onClick={downloadPDF}
               disabled={isGenerating}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-10 rounded-2xl shadow-xl transition-all flex items-center gap-3 disabled:opacity-50 text-xs uppercase"
+              className="group relative bg-slate-950 hover:bg-black text-white font-bold py-5 px-14 rounded-full shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center gap-4 border border-slate-800"
           >
-              {isGenerating ? "Procesando..." : <><Download size={20} /> Descargar PDF (Ajuste 8% Izquierda)</>}
+              <div className="bg-blue-600 p-2 rounded-full group-hover:bg-blue-500 transition-colors">
+                <Download size={20} className={isGenerating ? "animate-bounce" : ""} />
+              </div>
+              <span className="uppercase tracking-[0.15em] text-sm">
+                {isGenerating ? "Generando Reporte..." : "Descargar Reporte PDF"}
+              </span>
           </button>
+          
           <button 
               onClick={onBack}
-              className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 px-8 rounded-2xl transition-all flex items-center gap-2 text-xs uppercase"
+              className="text-slate-500 hover:text-slate-800 font-bold py-3 px-8 transition-all flex items-center gap-2 text-xs uppercase tracking-widest hover:bg-slate-300/50 rounded-full"
           >
-              <ArrowLeft size={18} /> Regresar
+              <ArrowLeft size={16} /> Volver al Tablero
           </button>
       </div>
     </div>
