@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { FileBarChart, RotateCcw, Trash2, ShieldCheck, ClipboardCheck, LayoutDashboard, Presentation } from 'lucide-react';
-import AuditForm from './components/AuditForm';
-import AuditReport from './components/AuditReport';
-import DashboardPreview from './components/DashboardPreview';
-import AIAssistant from './components/AIAssistant';
-import { AUDIT_MODULES, TOTAL_QUESTIONS } from './constants';
-import { AnswerValue, FarmData, ScoreData, ModuleScore } from './types';
+import AuditForm from './components/AuditForm.tsx';
+import AuditReport from './components/AuditReport.tsx';
+import DashboardPreview from './components/DashboardPreview.tsx';
+import AIAssistant from './components/AIAssistant.tsx';
+import { AUDIT_MODULES, TOTAL_QUESTIONS } from './constants.ts';
+import { AnswerValue, FarmData, ScoreData, ModuleScore } from './types.ts';
 
 function App() {
   const [view, setView] = useState<'form' | 'dashboard' | 'report'>('form');
@@ -157,7 +157,6 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-32">
       
-      {/* Dynamic Header */}
       <div className="bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-2xl sticky top-0 z-50">
         <div className="max-w-4xl mx-auto p-4">
           <div className="flex items-center justify-between mb-3">
@@ -279,7 +278,6 @@ function App() {
         )}
       </div>
 
-      {/* Persistent AI Expert Assistant */}
       <AIAssistant answers={answers} farmData={farmData} />
 
       {view === 'form' && (
